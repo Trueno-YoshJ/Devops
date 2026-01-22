@@ -21,13 +21,14 @@ pipeline {
         }
 
         stage('Build Backend (Spring Boot)') {
-            steps {
-                echo "Building Spring Boot backend..."
-                dir('devops') {
-                                sh 'mvn clean package -DskipTests'
-                            }
-            }
+    steps {
+        echo "Building Spring Boot backend..."
+        dir('Devops') { // <-- this should match the folder containing pom.xml
+            sh 'mvn clean package -DskipTests'
         }
+    }
+}
+
 
         stage('Build Frontend') {
             steps {
