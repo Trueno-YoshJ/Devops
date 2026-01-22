@@ -37,7 +37,7 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 echo "Building React frontend..."
-                dir('frontend') { // <-- switch to frontend folder
+                dir('Frontend') { // <-- switch to frontend folder
                     sh 'npm install'
                     sh 'npm run build' // production-ready build
                 }
