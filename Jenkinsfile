@@ -34,19 +34,18 @@ pipeline {
 
 
 stage('Build Frontend') {
-    agent {
-        docker {
-            image 'node:22-alpine'
-            args '-u root:root'
-        }
-    }
     steps {
-        dir('Frontend') {  // Make sure folder name matches
-            sh 'npm install'
-            sh 'npm run build'
+        script {
+            docker.image('node:22-alpine').inside {
+                dir('Frontend') {
+                    sh 'npm install'
+                    sh 'npm run build'
+                }
+            }
         }
     }
 }
+
 
         stage('Docker Login') {
             steps {
