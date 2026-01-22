@@ -33,19 +33,16 @@ pipeline {
 }
 
 
-stage('Build Frontend') {
-    steps {
-        script {
-            docker.image('node:22-alpine').inside {
-                dir('Frontend') {
+
+        stage('Build Frontend') {
+            steps {
+                echo "Building React frontend..."
+                dir('Frontend') { // <-- switch to frontend folder
                     sh 'npm install'
-                    sh 'npm run build'
+                    sh 'npm run build' // production-ready build
                 }
             }
         }
-    }
-}
-
 
         stage('Docker Login') {
             steps {
