@@ -23,9 +23,9 @@ pipeline {
         stage('Build Backend (Spring Boot)') {
             steps {
                 echo "Building Spring Boot backend..."
-                dir('devops') { // <-- switch to backend folder
-                    sh 'mvn clean package -DskipTests'
-                }
+                dir('devops') {
+                                sh 'mvn clean package -DskipTests'
+                            }
             }
         }
 
