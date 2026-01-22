@@ -33,16 +33,20 @@ pipeline {
 }
 
 
-
-        stage('Build Frontend') {
-            steps {
-                echo "Building React frontend..."
-                dir('Frontend') { // <-- switch to frontend folder
-                    sh 'npm install'
-                    sh 'npm run build' // production-ready build
-                }
-            }
+stage('Build Frontend') {
+    agent {
+        docker {
+            image 'node:22-alpine'
+            args '-u root:root'
         }
+    }
+    steps {
+        dir('Frontend') {  // Make sure folder name matches
+            sh 'npm install'
+            sh 'npm run build'
+        }
+    }
+}
 
         stage('Docker Login') {
             steps {
