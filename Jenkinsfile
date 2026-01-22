@@ -20,14 +20,18 @@ pipeline {
             }
         }
 
-        stage('Build Backend (Spring Boot)') {
+    stage('Build Backend (Spring Boot)') {
+    tools {
+        jdk 'JDK21' // must match the name you set in Jenkins
+    }
     steps {
-        echo "Building Spring Boot backend..."
-        dir('Devops') { // <-- this should match the folder containing pom.xml
+        echo "Building Spring Boot backend with JDK 21..."
+        dir('Devops') { // folder where pom.xml is
             sh 'mvn clean package -DskipTests'
         }
     }
 }
+
 
 
         stage('Build Frontend') {
