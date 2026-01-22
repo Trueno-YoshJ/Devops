@@ -23,19 +23,19 @@ pipeline {
         stage('Build Backend (Spring Boot)') {
             steps {
                 echo "Building Spring Boot backend..."
-                sh """
-                mvn clean package -DskipTests
-                """
+                dir('devops') { // <-- switch to backend folder
+                    sh 'mvn clean package -DskipTests'
+                }
             }
         }
 
         stage('Build Frontend') {
             steps {
-                echo "Installing frontend dependencies..."
-                sh """
-                cd frontend
-                npm install
-                """
+                echo "Building React frontend..."
+                dir('frontend') { // <-- switch to frontend folder
+                    sh 'npm install'
+                    sh 'npm run build' // production-ready build
+                }
             }
         }
 
@@ -51,7 +51,6 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 echo "Building Docker images..."
-
                 sh """
                 docker build -t $BACKEND_IMAGE:$IMAGE_TAG ./devops
                 docker build -t $FRONTEND_IMAGE:$IMAGE_TAG ./frontend
@@ -62,7 +61,6 @@ pipeline {
         stage('Push Images to Docker Hub') {
             steps {
                 echo "Pushing images to Docker Hub..."
-
                 sh """
                 docker push $BACKEND_IMAGE:$IMAGE_TAG
                 docker push $FRONTEND_IMAGE:$IMAGE_TAG
