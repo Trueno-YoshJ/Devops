@@ -2,12 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDS = credentials('dockerhub-creds')
-        DOCKERHUB_USER  = "${DOCKERHUB_CREDS_USR}"
-
-        FRONTEND_IMAGE = "${DOCKERHUB_USER}/react-vite-frontend"
-        BACKEND_IMAGE  = "${DOCKERHUB_USER}/springboot-backend"
-
+        // Load credentials from Jenkins (ID = 'dockerhub-creds')
+        DOCKERHUB_CREDS = credentials('dockerhub-creds') // Jenkins automatically creates DOCKERHUB_CREDS_USR and DOCKERHUB_CREDS_PSW
         IMAGE_TAG = "latest"
     }
 
@@ -20,26 +16,24 @@ pipeline {
             }
         }
 
-    stage('Build Backend (Spring Boot)') {
-    tools {
-        jdk 'JDK21' // must match the name you set in Jenkins
-    }
-    steps {
-        echo "Building Spring Boot backend with JDK 21..."
-        dir('Devops') { // folder where pom.xml is
-            sh 'mvn clean package -DskipTests'
+        stage('Build Backend (Spring Boot)') {
+            tools {
+                jdk 'JDK21' // Jenkins tool name
+            }
+            steps {
+                echo "Building Spring Boot backend with JDK 21..."
+                dir('Devops') {
+                    sh 'mvn clean package -DskipTests'
+                }
+            }
         }
-    }
-}
-
-
 
         stage('Build Frontend') {
             steps {
                 echo "Building React frontend..."
-                dir('Frontend') { // <-- switch to frontend folder
+                dir('Frontend') {
                     sh 'npm install'
-                    sh 'npm run build' // production-ready build
+                    sh 'npm run build'
                 }
             }
         }
@@ -48,7 +42,7 @@ pipeline {
             steps {
                 echo "Logging into Docker Hub..."
                 sh """
-                echo $DOCKERHUB_CREDS_PSW | docker login -u $DOCKERHUB_CREDS_USR --password-stdin
+                echo \$DOCKERHUB_CREDS_PSW | docker login -u \$DOCKERHUB_CREDS_USR --password-stdin
                 """
             }
         }
@@ -57,8 +51,8 @@ pipeline {
             steps {
                 echo "Building Docker images..."
                 sh """
-                docker build -t $BACKEND_IMAGE:$IMAGE_TAG ./devops
-                docker build -t $FRONTEND_IMAGE:$IMAGE_TAG ./frontend
+                docker build -t \$DOCKERHUB_CREDS_USR/springboot-backend:\$IMAGE_TAG ./Devops
+                docker build -t \$DOCKERHUB_CREDS_USR/react-vite-frontend:\$IMAGE_TAG ./Frontend
                 """
             }
         }
@@ -67,8 +61,8 @@ pipeline {
             steps {
                 echo "Pushing images to Docker Hub..."
                 sh """
-                docker push $BACKEND_IMAGE:$IMAGE_TAG
-                docker push $FRONTEND_IMAGE:$IMAGE_TAG
+                docker push \$DOCKERHUB_CREDS_USR/springboot-backend:\$IMAGE_TAG
+                docker push \$DOCKERHUB_CREDS_USR/react-vite-frontend:\$IMAGE_TAG
                 """
             }
         }
