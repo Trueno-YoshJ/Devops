@@ -75,8 +75,9 @@ pipeline {
             steps {
                 echo "Deploying application using Docker Compose (no buildx)..."
                 sh '''
-                docker compose down || true
-                docker compose up -d
+                docker-compose down
+                docker-compose up -d
+
                 '''
             }
         }
