@@ -71,16 +71,18 @@ pipeline {
             }
         }
 
-        stage('Deploy with Docker Compose (No Build)') {
-            steps {
-                echo "Deploying application using Docker Compose (no buildx)..."
-                sh '''
-                docker-compose down || true
-                docker-compose up -d
-
-                '''
-            }
+        stage('Deploy with Docker Compose') {
+    steps {
+        echo "Deploying application using Docker Compose..."
+        dir("${WORKSPACE}/Devops") { // if docker-compose.yml is in Devops folder
+            sh '''
+            docker-compose down || true
+            docker-compose up -d
+            '''
         }
+    }
+}
+
     }
 
     post {
