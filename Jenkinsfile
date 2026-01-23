@@ -71,17 +71,18 @@ pipeline {
             }
         }
 
-        stage('Deploy with Docker Compose') {
+       stage('Deploy with Docker Compose') {
     steps {
         echo "Deploying application using Docker Compose..."
-        dir("${WORKSPACE}/Devops") { // if docker-compose.yml is in Devops folder
+        dir("${WORKSPACE}") {  // workspace root
             sh '''
-            docker-compose down || true
-            docker-compose up -d
+            docker-compose -f Devops/docker-compose.yml down || true
+            docker-compose -f Devops/docker-compose.yml up -d
             '''
         }
     }
 }
+
 
     }
 
