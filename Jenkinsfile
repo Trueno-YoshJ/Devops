@@ -74,8 +74,9 @@ pipeline {
 stage('Deploy with Docker Compose') {
     steps {
         echo "Deploying application using Docker Compose..."
-        dir('Devops') {  // go into Devops folder
+        dir('Devops') {
             sh '''
+            docker-compose pull || true
             docker-compose down || true
             docker-compose up -d
             '''
