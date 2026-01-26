@@ -9,6 +9,10 @@ export default function Dashboard() {
     navigate("/");
   };
 
+  const handleServiceClick = () => {
+    navigate("/service");
+  };
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
@@ -23,7 +27,7 @@ export default function Dashboard() {
       </div>
 
       <div className="dashboard-cards">
-        <div className="card">
+        <div className="card clickable" onClick={handleServiceClick}>
           <h2>📅 Upcoming Services</h2>
           <p>No services scheduled yet.</p>
         </div>

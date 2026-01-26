@@ -3,6 +3,7 @@ import Home from "./pages/home.jsx";
 import Login from "./pages/login.jsx";
 import Signup from "./pages/signup.jsx";
 import Dashboard from "./pages/dashboard.jsx";
+import Service from "./pages/service.jsx";
 import "./components/navbar.css";
 
 export default function App() {
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/service" element={<Service />} />
       </Routes>
     </div>
   );
