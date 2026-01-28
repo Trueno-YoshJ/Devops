@@ -2,11 +2,13 @@ pipeline {
     agent any
 
     environment {
-        // Jenkins credentials (ID = dockerhub-creds)
         DOCKERHUB_CREDS = credentials('dockerhub-creds')
         IMAGE_TAG = "latest"
 
-        // Disable buildkit completely
+        AWS_EC2_IP = "18.234.113.136"     // your EC2 public IP
+        AWS_USER   = "ec2-user"           // Amazon Linux user
+        SSH_KEY    = "/var/lib/jenkins/.ssh/terraform-us-east.pem"
+
         DOCKER_BUILDKIT = "0"
         COMPOSE_DOCKER_CLI_BUILD = "0"
     }
@@ -25,16 +27,14 @@ pipeline {
                 jdk 'JDK21'
             }
             steps {
-                echo "Building Spring Boot backend with JDK 21..."
                 dir('Devops') {
                     sh 'mvn clean package -DskipTests'
                 }
             }
         }
 
-        stage('Build Frontend') {
+        stage('Build Frontend (React)') {
             steps {
-                echo "Building React frontend..."
                 dir('Frontend') {
                     sh 'npm install'
                     sh 'npm run build'
@@ -44,16 +44,14 @@ pipeline {
 
         stage('Docker Login') {
             steps {
-                echo "Logging into Docker Hub..."
                 sh '''
                 echo $DOCKERHUB_CREDS_PSW | docker login -u $DOCKERHUB_CREDS_USR --password-stdin
                 '''
             }
         }
 
-        stage('Build Docker Images (Legacy Builder)') {
+        stage('Build Docker Images') {
             steps {
-                echo "Building Docker images with legacy docker builder..."
                 sh '''
                 docker build -t $DOCKERHUB_CREDS_USR/springboot-backend:$IMAGE_TAG ./Devops
                 docker build -t $DOCKERHUB_CREDS_USR/react-vite-frontend:$IMAGE_TAG ./Frontend
@@ -61,9 +59,8 @@ pipeline {
             }
         }
 
-        stage('Push Images to Docker Hub') {
+        stage('Push Images to DockerHub') {
             steps {
-                echo "Pushing images to Docker Hub..."
                 sh '''
                 docker push $DOCKERHUB_CREDS_USR/springboot-backend:$IMAGE_TAG
                 docker push $DOCKERHUB_CREDS_USR/react-vite-frontend:$IMAGE_TAG
@@ -71,21 +68,30 @@ pipeline {
             }
         }
 
-stage('Deploy with Docker Compose') {
-    steps {
-        echo "Deploying application using Docker Compose..."
-        dir('Devops') {
-            sh '''
-            docker-compose pull || true
-            docker-compose down || true
-            docker-compose up -d
-            '''
+        stage('Deploy to AWS EC2') {
+            steps {
+                sh """
+                ssh -o StrictHostKeyChecking=no -i $SSH_KEY $AWS_USER@$AWS_EC2_IP << 'EOF'
+                  sudo systemctl start docker
+                  sudo systemctl enable docker
+
+                  docker login -u ${DOCKERHUB_CREDS_USR} -p ${DOCKERHUB_CREDS_PSW}
+
+                  docker pull ${DOCKERHUB_CREDS_USR}/springboot-backend:latest
+                  docker pull ${DOCKERHUB_CREDS_USR}/react-vite-frontend:latest
+
+                  docker stop backend || true
+                  docker stop frontend || true
+
+                  docker rm backend || true
+                  docker rm frontend || true
+
+                  docker run -d -p 8080:8080 --name backend ${DOCKERHUB_CREDS_USR}/springboot-backend:latest
+                  docker run -d -p 80:80 --name frontend ${DOCKERHUB_CREDS_USR}/react-vite-frontend:latest
+                EOF
+                """
+            }
         }
-    }
-}
-
-
-
     }
 
     post {
@@ -93,10 +99,10 @@ stage('Deploy with Docker Compose') {
             echo "✅ CI/CD Pipeline completed successfully!"
         }
         failure {
-            echo "❌ Pipeline failed. Check Jenkins logs."
+            echo "❌ Pipeline failed!"
         }
         always {
-            sh "docker logout"
+            sh "docker logout || true"
         }
     }
 }
