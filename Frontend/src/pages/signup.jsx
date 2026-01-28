@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import "../components/signup.css";
+import { SIGNUP_URL } from "../api/config";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -8,28 +9,28 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-const handleSignup = async (e) => {
-  e.preventDefault();
+  const handleSignup = async (e) => {
+    e.preventDefault();
 
-  try {
-    const response = await fetch("http://localhost:9090/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, email, password }),
-    });
+    try {
+      const response = await fetch(SIGNUP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password }),
+      });
 
-    if (response.ok) {
-      alert("Signup successful!");
-      navigate("/dashboard");
-    } else {
-      const error = await response.text();
-      alert(error);
+      if (response.ok) {
+        alert("Signup successful!");
+        navigate("/dashboard");
+      } else {
+        const error = await response.text();
+        alert(error);
+      }
+    } catch (err) {
+      console.error("Error signing up:", err);
+      alert("Server error, please try again later.");
     }
-  } catch (err) {
-    console.error("Error signing up:", err);
-    alert("Server error, please try again later.");
-  }
-};
+  };
 
 
   return (

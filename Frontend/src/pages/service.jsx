@@ -1,25 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import "../components/service.css";
-
-const API_URL = "http://localhost:9090/api/services";
+import { SERVICES_URL } from "../api/config";
 
 export default function NewService() {
-
   const [services, setServices] = useState([]);
   const [form, setForm] = useState({
-    serviceName: '',
-    vehiclePlate: '',
-    ownerName: '',
-    serviceDate: '',
-    serviceTime: '',
-    price: ''
+    serviceName: "",
+    vehiclePlate: "",
+    ownerName: "",
+    serviceDate: "",
+    serviceTime: "",
+    price: "",
   });
-
   const [editingId, setEditingId] = useState(null);
 
-  // READ
   const loadServices = async () => {
-    const res = await fetch(API_URL);
+    const res = await fetch(SERVICES_URL);
     const data = await res.json();
     setServices(data);
   };
@@ -28,36 +24,32 @@ export default function NewService() {
     loadServices();
   }, []);
 
-  // INPUT HANDLER
   const handleChange = (e) => {
-    setForm({...form, [e.target.name]: e.target.value});
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // CREATE
   const addService = async () => {
-    await fetch(API_URL, {
+    await fetch(SERVICES_URL, {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(form)
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
     });
     loadServices();
     resetForm();
   };
 
-  // UPDATE
   const updateService = async () => {
-    await fetch(`${API_URL}/${editingId}`, {
+    await fetch(`${SERVICES_URL}/${editingId}`, {
       method: "PUT",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(form)
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
     });
     loadServices();
     resetForm();
   };
 
-  // DELETE
   const deleteService = async (id) => {
-    await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+    await fetch(`${SERVICES_URL}/${id}`, { method: "DELETE" });
     loadServices();
   };
 
@@ -68,12 +60,12 @@ export default function NewService() {
 
   const resetForm = () => {
     setForm({
-      serviceName: '',
-      vehiclePlate: '',
-      ownerName: '',
-      serviceDate: '',
-      serviceTime: '',
-      price: ''
+      serviceName: "",
+      vehiclePlate: "",
+      ownerName: "",
+      serviceDate: "",
+      serviceTime: "",
+      price: "",
     });
     setEditingId(null);
   };

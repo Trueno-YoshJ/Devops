@@ -1,34 +1,35 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import "../components/login.css";
+import { LOGIN_URL } from "../api/config";
 
 export default function Login() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-const handleLogin = async (e) => {
-  e.preventDefault();
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
-  try {
-    const response = await fetch("http://localhost:9090/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
+    try {
+      const response = await fetch(LOGIN_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
 
-    if (response.ok) {
-      alert("Login successful!");
-      navigate("/dashboard");
-    } else {
-      const error = await response.text();
-      alert(error);
+      if (response.ok) {
+        alert("Login successful!");
+        navigate("/dashboard");
+      } else {
+        const error = await response.text();
+        alert(error);
+      }
+    } catch (err) {
+      console.error("Error logging in:", err);
+      alert("Server error, please try again later.");
     }
-  } catch (err) {
-    console.error("Error logging in:", err);
-    alert("Server error, please try again later.");
-  }
-};
+  };
 
   return (
     <div className="login-container">
