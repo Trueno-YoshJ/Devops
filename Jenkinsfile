@@ -8,9 +8,6 @@ pipeline {
         AWS_EC2_IP = "18.234.113.136"
         AWS_USER   = "ec2-user"
         SSH_KEY    = "/var/lib/jenkins/.ssh/terraform-us-east.pem"
-
-        DOCKER_BUILDKIT = "0"
-        COMPOSE_DOCKER_CLI_BUILD = "0"
     }
 
     stages {
@@ -22,33 +19,7 @@ pipeline {
             }
         }
 
-        stage('Build Backend (Spring Boot)') {
-            tools { jdk 'JDK21' }
-            steps {
-                dir('Devops') {
-                    sh 'mvn clean package -DskipTests'
-                }
-            }
-        }
-
-        stage('Build Frontend (React)') {
-            steps {
-                dir('Frontend') {
-                    sh 'npm install'
-                    sh 'npm run build'
-                }
-            }
-        }
-
-        stage('Docker Login') {
-            steps {
-                sh '''
-                echo $DOCKERHUB_CREDS_PSW | docker login -u $DOCKERHUB_CREDS_USR --password-stdin
-                '''
-            }
-        }
-
-        stage('Build Docker Images') {
+        stage('Build Backend & Frontend Docker Images') {
             steps {
                 sh '''
                 docker build -t $DOCKERHUB_CREDS_USR/springboot-backend:$IMAGE_TAG ./Devops
@@ -60,45 +31,34 @@ pipeline {
         stage('Push Images to DockerHub') {
             steps {
                 sh '''
+                echo $DOCKERHUB_CREDS_PSW | docker login -u $DOCKERHUB_CREDS_USR --password-stdin
                 docker push $DOCKERHUB_CREDS_USR/springboot-backend:$IMAGE_TAG
                 docker push $DOCKERHUB_CREDS_USR/react-vite-frontend:$IMAGE_TAG
                 '''
             }
         }
 
-        stage('Deploy to AWS EC2') {
-    steps {
-        sh """
-        ssh -o StrictHostKeyChecking=no -i $SSH_KEY $AWS_USER@$AWS_EC2_IP << EOF
-        sudo docker login -u truenoyoshj -p $DOCKERHUB_CREDS_PSW
+        stage('Deploy to AWS with Docker Compose') {
+            steps {
+                sh """
+                scp -i $SSH_KEY docker-compose.yml $AWS_USER@$AWS_EC2_IP:~/docker-compose.yml
 
-        sudo docker stop backend || true
-        sudo docker stop frontend || true
-
-        sudo docker rm backend || true
-        sudo docker rm frontend || true
-
-        sudo docker pull truenoyoshj/springboot-backend:latest
-        sudo docker pull truenoyoshj/react-vite-frontend:latest
-
-        sudo docker run -d --name backend -p 8080:8080 truenoyoshj/springboot-backend:latest
-        sudo docker run -d --name frontend -p 80:80 truenoyoshj/react-vite-frontend:latest
+                ssh -i $SSH_KEY $AWS_USER@$AWS_EC2_IP << EOF
+                sudo docker-compose -f ~/docker-compose.yml down
+                sudo docker-compose -f ~/docker-compose.yml pull
+                sudo docker-compose -f ~/docker-compose.yml up -d
 EOF
-        """
+                """
+            }
+        }
     }
-}
-
-    } // <-- CLOSES stages BLOCK
 
     post {
         success {
-            echo "✅ CI/CD Pipeline completed successfully!"
+            echo "✅ Pipeline completed successfully!"
         }
         failure {
             echo "❌ Pipeline failed!"
-        }
-        always {
-            sh "docker logout || true"
         }
     }
 }
