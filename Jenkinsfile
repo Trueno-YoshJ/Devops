@@ -67,26 +67,26 @@ pipeline {
         }
 
         stage('Deploy to AWS EC2') {
-            steps {
-                sh '''
-                ssh -o StrictHostKeyChecking=no -i $SSH_KEY $AWS_USER@$AWS_EC2_IP << 'EOF'
-                sudo docker login -u truenoyoshj -p $DOCKERHUB_CREDS_PSW
+    steps {
+        sh """
+        ssh -o StrictHostKeyChecking=no -i $SSH_KEY $AWS_USER@$AWS_EC2_IP << EOF
+        sudo docker login -u truenoyoshj -p $DOCKERHUB_CREDS_PSW
 
-                sudo docker stop backend || true
-                sudo docker stop frontend || true
+        sudo docker stop backend || true
+        sudo docker stop frontend || true
 
-                sudo docker rm backend || true
-                sudo docker rm frontend || true
+        sudo docker rm backend || true
+        sudo docker rm frontend || true
 
-                sudo docker pull truenoyoshj/springboot-backend:latest
-                sudo docker pull truenoyoshj/react-vite-frontend:latest
+        sudo docker pull truenoyoshj/springboot-backend:latest
+        sudo docker pull truenoyoshj/react-vite-frontend:latest
 
-                sudo docker run -d --name backend -p 8080:8080 truenoyoshj/springboot-backend:latest
-                sudo docker run -d --name frontend -p 80:80 truenoyoshj/react-vite-frontend:latest
-                EOF
-                '''
-            }
-        }
+        sudo docker run -d --name backend -p 8080:8080 truenoyoshj/springboot-backend:latest
+        sudo docker run -d --name frontend -p 80:80 truenoyoshj/react-vite-frontend:latest
+EOF
+        """
+    }
+}
 
     } // <-- CLOSES stages BLOCK
 
