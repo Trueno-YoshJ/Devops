@@ -5,8 +5,8 @@ pipeline {
         DOCKERHUB_CREDS = credentials('dockerhub-creds')
         IMAGE_TAG = "latest"
 
-        AWS_EC2_IP = "18.234.113.136"     // your EC2 public IP
-        AWS_USER   = "ec2-user"           // Amazon Linux user
+        AWS_EC2_IP = "18.234.113.136"
+        AWS_USER   = "ec2-user"
         SSH_KEY    = "/var/lib/jenkins/.ssh/terraform-us-east.pem"
 
         DOCKER_BUILDKIT = "0"
@@ -23,9 +23,7 @@ pipeline {
         }
 
         stage('Build Backend (Spring Boot)') {
-            tools {
-                jdk 'JDK21'
-            }
+            tools { jdk 'JDK21' }
             steps {
                 dir('Devops') {
                     sh 'mvn clean package -DskipTests'
@@ -69,26 +67,28 @@ pipeline {
         }
 
         stage('Deploy to AWS EC2') {
-    steps {
-        sh '''
-        ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/terraform-us-east.pem ec2-user@18.234.113.136 << 'EOF'
-        sudo docker login -u truenoyoshj -p $DOCKERHUB_CREDS_PSW
+            steps {
+                sh '''
+                ssh -o StrictHostKeyChecking=no -i $SSH_KEY $AWS_USER@$AWS_EC2_IP << 'EOF'
+                sudo docker login -u truenoyoshj -p $DOCKERHUB_CREDS_PSW
 
-        sudo docker stop backend || true
-        sudo docker stop frontend || true
+                sudo docker stop backend || true
+                sudo docker stop frontend || true
 
-        sudo docker rm backend || true
-        sudo docker rm frontend || true
+                sudo docker rm backend || true
+                sudo docker rm frontend || true
 
-        sudo docker pull truenoyoshj/springboot-backend:latest
-        sudo docker pull truenoyoshj/react-vite-frontend:latest
+                sudo docker pull truenoyoshj/springboot-backend:latest
+                sudo docker pull truenoyoshj/react-vite-frontend:latest
 
-        sudo docker run -d --name backend -p 8080:8080 truenoyoshj/springboot-backend:latest
-        sudo docker run -d --name frontend -p 80:80 truenoyoshj/react-vite-frontend:latest
-        EOF
-        '''
-    }
-}
+                sudo docker run -d --name backend -p 8080:8080 truenoyoshj/springboot-backend:latest
+                sudo docker run -d --name frontend -p 80:80 truenoyoshj/react-vite-frontend:latest
+                EOF
+                '''
+            }
+        }
+
+    } // <-- CLOSES stages BLOCK
 
     post {
         success {
