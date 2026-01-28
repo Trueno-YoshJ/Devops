@@ -7,6 +7,11 @@ pipeline {
         AWS_EC2_IP = "18.234.113.136"
         AWS_USER = "ec2-user"
         SSH_KEY = "/var/lib/jenkins/.ssh/terraform-us-east.pem"
+        MYSQL_ROOT_PASSWORD = "0716300615"
+        MYSQL_DATABASE = "automirage"
+        MYSQL_USER = "root"
+        MYSQL_PASSWORD = "0716300615"
+        DOCKER_NETWORK = "devops-net"
         DOCKER_BUILDKIT = "0"
         COMPOSE_DOCKER_CLI_BUILD = "0"
     }
@@ -68,15 +73,38 @@ pipeline {
             steps {
                 sh """
                     ssh -o StrictHostKeyChecking=no -i $SSH_KEY $AWS_USER@$AWS_EC2_IP << 'EOF'
-                        sudo docker login -u truenoyoshj -p $DOCKERHUB_CREDS_PSW
-                        sudo docker stop backend || true
-                        sudo docker stop frontend || true
-                        sudo docker rm backend || true
-                        sudo docker rm frontend || true
-                        sudo docker pull truenoyoshj/springboot-backend:latest
-                        sudo docker pull truenoyoshj/react-vite-frontend:latest
-                        sudo docker run -d --name backend -p 8080:8080 truenoyoshj/springboot-backend:latest
-                        sudo docker run -d --name frontend -p 80:80 truenoyoshj/react-vite-frontend:latest
+                        # Create Docker network if not exists
+                        sudo docker network create $DOCKER_NETWORK || true
+                        
+                        # Stop & remove any existing containers
+                        sudo docker stop mysql-db backend frontend || true
+                        sudo docker rm mysql-db backend frontend || true
+                        
+                        # Start MySQL container
+                        sudo docker run -d --name mysql-db --network $DOCKER_NETWORK \
+                            -e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD \
+                            -e MYSQL_DATABASE=$MYSQL_DATABASE \
+                            -e MYSQL_USER=$MYSQL_USER \
+                            -e MYSQL_PASSWORD=$MYSQL_PASSWORD \
+                            -p 3306:3306 \
+                            mysql:8.0
+                        
+                        # Wait a few seconds for MySQL to initialize
+                        sleep 10
+                        
+                        # Pull and run backend container on same network
+                        sudo docker pull $DOCKERHUB_CREDS_USR/springboot-backend:$IMAGE_TAG
+                        sudo docker run -d --name backend --network $DOCKER_NETWORK \
+                            -p 8080:8080 \
+                            -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/$MYSQL_DATABASE \
+                            -e SPRING_DATASOURCE_USERNAME=$MYSQL_USER \
+                            -e SPRING_DATASOURCE_PASSWORD=$MYSQL_PASSWORD \
+                            $DOCKERHUB_CREDS_USR/springboot-backend:$IMAGE_TAG
+                        
+                        # Pull and run frontend container (optional network)
+                        sudo docker pull $DOCKERHUB_CREDS_USR/react-vite-frontend:$IMAGE_TAG
+                        sudo docker run -d --name frontend -p 80:80 \
+                            $DOCKERHUB_CREDS_USR/react-vite-frontend:$IMAGE_TAG
 EOF
                 """
             }
