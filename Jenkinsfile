@@ -69,30 +69,26 @@ pipeline {
         }
 
         stage('Deploy to AWS EC2') {
-            steps {
-                sh """
-                ssh -o StrictHostKeyChecking=no -i $SSH_KEY $AWS_USER@$AWS_EC2_IP << 'EOF'
-                  sudo systemctl start docker
-                  sudo systemctl enable docker
+    steps {
+        sh '''
+        ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/terraform-us-east.pem ec2-user@18.234.113.136 << 'EOF'
+        sudo docker login -u truenoyoshj -p $DOCKERHUB_CREDS_PSW
 
-                  docker login -u ${DOCKERHUB_CREDS_USR} -p ${DOCKERHUB_CREDS_PSW}
+        sudo docker stop backend || true
+        sudo docker stop frontend || true
 
-                  docker pull ${DOCKERHUB_CREDS_USR}/springboot-backend:latest
-                  docker pull ${DOCKERHUB_CREDS_USR}/react-vite-frontend:latest
+        sudo docker rm backend || true
+        sudo docker rm frontend || true
 
-                  docker stop backend || true
-                  docker stop frontend || true
+        sudo docker pull truenoyoshj/springboot-backend:latest
+        sudo docker pull truenoyoshj/react-vite-frontend:latest
 
-                  docker rm backend || true
-                  docker rm frontend || true
-
-                  docker run -d -p 8080:8080 --name backend ${DOCKERHUB_CREDS_USR}/springboot-backend:latest
-                  docker run -d -p 80:80 --name frontend ${DOCKERHUB_CREDS_USR}/react-vite-frontend:latest
-                EOF
-                """
-            }
-        }
+        sudo docker run -d --name backend -p 8080:8080 truenoyoshj/springboot-backend:latest
+        sudo docker run -d --name frontend -p 80:80 truenoyoshj/react-vite-frontend:latest
+        EOF
+        '''
     }
+}
 
     post {
         success {
