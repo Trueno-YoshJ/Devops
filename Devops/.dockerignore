@@ -1,0 +1,51 @@
+# ===== Build artifacts =====
+target
+*.jar
+*.war
+*.ear
+*.class
+
+# ===== Maven =====
+.mvn
+.mvn/wrapper
+mvnw
+mvnw.cmd
+.m2
+
+# ===== Logs =====
+logs
+*.log
+
+# ===== IDE =====
+.vscode
+.idea
+*.iml
+*.ipr
+*.iws
+
+# ===== OS junk =====
+.DS_Store
+Thumbs.db
+
+# ===== Git =====
+.git
+.gitignore
+
+# ===== Docker =====
+docker-compose.yml
+Dockerfile
+
+# ===== Environment / secrets =====
+.env
+.env.*
+application-local.properties
+application-dev.properties
+application-test.properties
+
+# ===== Terraform / CI =====
+.terraform
+terraform.tfstate*
+Jenkinsfile
+
+# ===== Tests =====
+src/test
