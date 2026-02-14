@@ -50,16 +50,17 @@ pipeline {
         }
 
         stage('Build & Push Images') {
-            steps {
-                sh '''
-                  docker build -t $DOCKERHUB_CREDS_USR/springboot-backend:$IMAGE_TAG ./Devops
-                  docker build -t $DOCKERHUB_CREDS_USR/react-vite-frontend:$IMAGE_TAG ./Frontend
-
-                  docker push $DOCKERHUB_CREDS_USR/springboot-backend:$IMAGE_TAG
-                  docker push $DOCKERHUB_CREDS_USR/react-vite-frontend:$IMAGE_TAG
-                '''
-            }
+    steps {
+        dir('Devops') {
+            sh '''
+            ls -lh target
+            docker build -t $DOCKERHUB_CREDS_USR/springboot-backend:$IMAGE_TAG .
+            docker push $DOCKERHUB_CREDS_USR/springboot-backend:$IMAGE_TAG
+            '''
         }
+    }
+}
+
 
         stage('Deploy to AWS EC2') {
             steps {
