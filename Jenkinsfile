@@ -110,4 +110,4 @@ EOF
         success { echo "✅ CI/CD Pipeline completed successfully!" }
         failure { echo "❌ Pipeline failed!" }
         always { sh "docker logout || true" }
-    }
+    }}
