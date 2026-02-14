@@ -5,7 +5,7 @@ export default function Home() {
     <div className="home-container">
       <header className="hero">
         <div className="hero-content">
-          <h1>welcome to AutoCare Service Center</h1>
+          <h1>lcome to AutoCare Service Center</h1>
           <p>Your trusted partner for reliable vehicle maintenance & repair.</p>
           <a href="/login" className="hero-btn">
             Get Started
