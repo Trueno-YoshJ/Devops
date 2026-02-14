@@ -65,36 +65,29 @@ pipeline {
             }
         }
 
-        stage('Cleanup & Deploy to AWS EC2') {
+        stage('Deploy to AWS EC2') {
             steps {
                 sh """
                     ssh -o StrictHostKeyChecking=no -i $SSH_KEY $AWS_USER@$AWS_EC2_IP << 'EOF'
-                        echo "Cleaning up old Docker containers, images, and dangling volumes..."
-                        # Stop all containers if running
-                        sudo docker ps -q | xargs -r sudo docker stop
-                        # Remove all containers
-                        sudo docker ps -aq | xargs -r sudo docker rm -f
-                        # Remove all images (optional: you can filter only your repo images)
-                        sudo docker images -q | xargs -r sudo docker rmi -f
-                        # Remove dangling images, volumes, networks
-                        sudo docker system prune -af
-                        sudo docker volume prune -f
-                        sudo docker network prune -f
-
-                        echo "Creating Docker network if not exists..."
+                        # Create Docker network if not exists
                         sudo docker network create $DOCKER_NETWORK || true
 
-                        echo "Starting MySQL container..."
+                        # Stop & remove any existing containers
+                        sudo docker stop mysql-db backend frontend || true
+                        sudo docker rm mysql-db backend frontend || true
+
+                        # Start MySQL container (root only)
                         sudo docker run -d --name mysql-db --network $DOCKER_NETWORK \
                             -e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD \
                             -e MYSQL_DATABASE=$MYSQL_DATABASE \
                             -p 3306:3306 \
                             mysql:8.0
 
-                        echo "Waiting 20 seconds for MySQL to initialize..."
+                        # Wait for MySQL to fully initialize
+                        echo "Waiting 20 seconds for MySQL..."
                         sleep 20
 
-                        echo "Deploying backend container..."
+                        # Pull and run backend container on same network
                         sudo docker pull $DOCKERHUB_CREDS_USR/springboot-backend:$IMAGE_TAG
                         sudo docker run -d --name backend --network $DOCKER_NETWORK \
                             -p 9090:9090 \
@@ -103,11 +96,10 @@ pipeline {
                             -e SPRING_DATASOURCE_PASSWORD=$MYSQL_ROOT_PASSWORD \
                             $DOCKERHUB_CREDS_USR/springboot-backend:$IMAGE_TAG
 
-                        echo "Deploying frontend container..."
+                        # Pull and run frontend container (no network dependency)
                         sudo docker pull $DOCKERHUB_CREDS_USR/react-vite-frontend:$IMAGE_TAG
                         sudo docker run -d --name frontend -p 80:80 \
                             $DOCKERHUB_CREDS_USR/react-vite-frontend:$IMAGE_TAG
-
 EOF
                 """
             }
@@ -118,5 +110,4 @@ EOF
         success { echo "✅ CI/CD Pipeline completed successfully!" }
         failure { echo "❌ Pipeline failed!" }
         always { sh "docker logout || true" }
-    }
-}
+    }}
