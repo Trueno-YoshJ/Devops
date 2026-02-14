@@ -1,9 +1,6 @@
 FROM eclipse-temurin:21-jdk-alpine
-
-WORKDIR /
-
-COPY target/*.jar app.jar
-
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
 EXPOSE 9090
-
 ENTRYPOINT ["java","-jar","/app.jar"]
+
